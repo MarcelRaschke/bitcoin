@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019 The Bitcoin Core developers
+// Copyright (c) 2018-2020 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -15,13 +15,10 @@
 #define CLIENT_VERSION_IS_RELEASE false
 
 /* Major version */
-#define CLIENT_VERSION_MAJOR 0
+#define CLIENT_VERSION_MAJOR 21
 
 /* Minor version */
-#define CLIENT_VERSION_MINOR 19
-
-/* Build revision */
-#define CLIENT_VERSION_REVISION 99
+#define CLIENT_VERSION_MINOR 99
 
 /* Copyright holder(s) before %s replacement */
 #define COPYRIGHT_HOLDERS "The %s developers"
@@ -38,26 +35,26 @@
 /* Define to 1 to enable wallet functions */
 #define ENABLE_WALLET 1
 
+/* Define to 1 to enable BDB wallet */
+#define USE_BDB 1
+
+/* Define to 1 to enable SQLite wallet */
+#define USE_SQLITE 1
+
 /* Define to 1 to enable ZMQ functions */
 #define ENABLE_ZMQ 1
-
-/* parameter and return value type for __fdelt_chk */
-/* #undef FDELT_TYPE */
 
 /* define if the Boost library is available */
 #define HAVE_BOOST /**/
 
-/* define if the Boost::Chrono library is available */
-#define HAVE_BOOST_CHRONO /**/
-
 /* define if the Boost::Filesystem library is available */
 #define HAVE_BOOST_FILESYSTEM /**/
 
+/* define if external signer support is enabled (requires Boost::Process) */
+#define ENABLE_EXTERNAL_SIGNER /**/
+
 /* define if the Boost::System library is available */
 #define HAVE_BOOST_SYSTEM /**/
-
-/* define if the Boost::Thread library is available */
-#define HAVE_BOOST_THREAD /**/
 
 /* define if the Boost::Unit_Test_Framework library is available */
 #define HAVE_BOOST_UNIT_TEST_FRAMEWORK /**/
@@ -95,9 +92,9 @@
    don't. */
 #define HAVE_DECL_BSWAP_64 0
 
-/* Define to 1 if you have the declaration of `daemon', and to 0 if you don't.
+/* Define to 1 if you have the declaration of `fork', and to 0 if you don't.
    */
-#define HAVE_DECL_DAEMON 0
+#define HAVE_DECL_FORK 0
 
 /* Define to 1 if you have the declaration of `htobe16', and to 0 if you
    don't. */
@@ -135,6 +132,10 @@
    don't. */
 #define HAVE_DECL_LE64TOH 0
 
+/* Define to 1 if you have the declaration of `setsid', and to 0 if you don't.
+   */
+#define HAVE_DECL_SETSID 0
+
 /* Define to 1 if you have the declaration of `strerror_r', and to 0 if you
    don't. */
 #define HAVE_DECL_STRERROR_R 0
@@ -142,18 +143,6 @@
 /* Define to 1 if you have the declaration of `strnlen', and to 0 if you
    don't. */
 #define HAVE_DECL_STRNLEN 1
-
-/* Define to 1 if you have the declaration of `__builtin_clz', and to 0 if you
-   don't. */
-//#define HAVE_DECL___BUILTIN_CLZ 1
-
-/* Define to 1 if you have the declaration of `__builtin_clzl', and to 0 if
-   you don't. */
-//#define HAVE_DECL___BUILTIN_CLZL 1
-
-/* Define to 1 if you have the declaration of `__builtin_clzll', and to 0 if
-   you don't. */
-//#define HAVE_DECL___BUILTIN_CLZLL 1
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 /* #undef HAVE_DLFCN_H */
@@ -191,9 +180,6 @@
 
 /* Define to 1 if you have the <miniupnpc/miniupnpc.h> header file. */
 #define HAVE_MINIUPNPC_MINIUPNPC_H 1
-
-/* Define to 1 if you have the <miniupnpc/miniwget.h> header file. */
-#define HAVE_MINIUPNPC_MINIWGET_H 1
 
 /* Define to 1 if you have the <miniupnpc/upnpcommands.h> header file. */
 #define HAVE_MINIUPNPC_UPNPCOMMANDS_H 1
@@ -258,12 +244,6 @@
 /* Define if the visibility attribute is supported. */
 #define HAVE_VISIBILITY_ATTRIBUTE 1
 
-/* Define this symbol if boost sleep works */
-/* #undef HAVE_WORKING_BOOST_SLEEP */
-
-/* Define this symbol if boost sleep_for works */
-#define HAVE_WORKING_BOOST_SLEEP_FOR 1
-
 /* Define to the sub-directory where libtool stores uninstalled libraries. */
 #define LT_OBJDIR ".libs/"
 
@@ -274,7 +254,7 @@
 #define PACKAGE_NAME "Bitcoin Core"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "Bitcoin Core 0.19.99"
+#define PACKAGE_STRING "Bitcoin Core 21.99.0"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "bitcoin"
@@ -283,7 +263,7 @@
 #define PACKAGE_URL "https://bitcoincore.org/"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "0.19.99"
+#define PACKAGE_VERSION "21.99.0"
 
 /* Define to necessary symbol if this constant uses a non-standard name on
    your system. */
@@ -312,9 +292,6 @@
 
 /* Define this symbol to build in assembly routines */
 //#define USE_ASM 1
-
-/* Define this symbol if coverage is enabled */
-/* #undef USE_COVERAGE */
 
 /* Define if dbus support should be compiled in */
 /* #undef USE_DBUS */

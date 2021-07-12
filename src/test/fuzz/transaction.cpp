@@ -1,7 +1,8 @@
-// Copyright (c) 2019 The Bitcoin Core developers
+// Copyright (c) 2019-2020 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include <chainparams.h>
 #include <coins.h>
 #include <consensus/tx_check.h>
 #include <consensus/tx_verify.h>
@@ -13,13 +14,19 @@
 #include <primitives/transaction.h>
 #include <streams.h>
 #include <test/fuzz/fuzz.h>
+#include <univalue.h>
 #include <util/rbf.h>
 #include <validation.h>
 #include <version.h>
 
 #include <cassert>
 
-void test_one_input(const std::vector<uint8_t>& buffer)
+void initialize_transaction()
+{
+    SelectParams(CBaseChainParams::REGTEST);
+}
+
+FUZZ_TARGET_INIT(transaction, initialize_transaction)
 {
     CDataStream ds(buffer, SER_NETWORK, INIT_PROTO_VERSION);
     try {
@@ -35,7 +42,7 @@ void test_one_input(const std::vector<uint8_t>& buffer)
             return CTransaction(deserialize, ds);
         } catch (const std::ios_base::failure&) {
             valid_tx = false;
-            return CTransaction();
+            return CTransaction{CMutableTransaction{}};
         }
     }();
     bool valid_mutable_tx = true;
@@ -54,8 +61,11 @@ void test_one_input(const std::vector<uint8_t>& buffer)
         return;
     }
 
-    TxValidationState state_with_dupe_check;
-    (void)CheckTransaction(tx, state_with_dupe_check);
+    {
+        TxValidationState state_with_dupe_check;
+        const bool res{CheckTransaction(tx, state_with_dupe_check)};
+        Assert(res == state_with_dupe_check.IsValid());
+    }
 
     const CFeeRate dust_relay_fee{DUST_RELAY_TX_FEE};
     std::string reason;
@@ -85,4 +95,14 @@ void test_one_input(const std::vector<uint8_t>& buffer)
     (void)IsStandardTx(tx, reason);
     (void)RecursiveDynamicUsage(tx);
     (void)SignalsOptInRBF(tx);
+
+    CCoinsView coins_view;
+    const CCoinsViewCache coins_view_cache(&coins_view);
+    (void)AreInputsStandard(tx, coins_view_cache, false);
+    (void)AreInputsStandard(tx, coins_view_cache, true);
+    (void)IsWitnessStandard(tx, coins_view_cache);
+
+    UniValue u(UniValue::VOBJ);
+    TxToUniv(tx, /* hashBlock */ uint256::ZERO, /* include_addresses */ true, u);
+    TxToUniv(tx, /* hashBlock */ uint256::ONE, /* include_addresses */ false, u);
 }

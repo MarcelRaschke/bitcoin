@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2015-2019 The Bitcoin Core developers
+# Copyright (c) 2015-2020 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """
@@ -21,28 +21,40 @@ Invalid tx cases not covered here can be found by running:
 """
 import abc
 
-from test_framework.messages import CTransaction, CTxIn, CTxOut, COutPoint
-from test_framework import script as sc
+from typing import Optional
+from test_framework.messages import (
+    COutPoint,
+    CTransaction,
+    CTxIn,
+    CTxOut,
+    MAX_MONEY,
+)
 from test_framework.blocktools import create_tx_with_script, MAX_BLOCK_SIGOPS
 from test_framework.script import (
     CScript,
-    OP_CAT,
-    OP_SUBSTR,
-    OP_LEFT,
-    OP_RIGHT,
-    OP_INVERT,
-    OP_AND,
-    OP_OR,
-    OP_XOR,
-    OP_2MUL,
+    OP_0,
     OP_2DIV,
-    OP_MUL,
+    OP_2MUL,
+    OP_AND,
+    OP_CAT,
+    OP_CHECKSIG,
     OP_DIV,
-    OP_MOD,
+    OP_INVERT,
+    OP_LEFT,
     OP_LSHIFT,
-    OP_RSHIFT
+    OP_MOD,
+    OP_MUL,
+    OP_OR,
+    OP_RIGHT,
+    OP_RSHIFT,
+    OP_SUBSTR,
+    OP_TRUE,
+    OP_XOR,
 )
-basic_p2sh = sc.CScript([sc.OP_HASH160, sc.hash160(sc.CScript([sc.OP_0])), sc.OP_EQUAL])
+from test_framework.script_util import (
+    script_to_p2sh_script,
+)
+basic_p2sh = script_to_p2sh_script(CScript([OP_0]))
 
 
 class BadTxTemplate:
@@ -50,7 +62,7 @@ class BadTxTemplate:
     __metaclass__ = abc.ABCMeta
 
     # The expected error code given by bitcoind upon submission of the tx.
-    reject_reason = ""
+    reject_reason: Optional[str] = ""
 
     # Only specified if it differs from mempool acceptance error.
     block_reject_reason = ""
@@ -109,7 +121,7 @@ class SizeTooSmall(BadTxTemplate):
     def get_tx(self):
         tx = CTransaction()
         tx.vin.append(self.valid_txin)
-        tx.vout.append(CTxOut(0, sc.CScript([sc.OP_TRUE])))
+        tx.vout.append(CTxOut(0, CScript([OP_TRUE])))
         tx.calc_sha256()
         return tx
 
@@ -144,6 +156,19 @@ class DuplicateInput(BadTxTemplate):
         return tx
 
 
+class PrevoutNullInput(BadTxTemplate):
+    reject_reason = 'bad-txns-prevout-null'
+    expect_disconnect = True
+
+    def get_tx(self):
+        tx = CTransaction()
+        tx.vin.append(self.valid_txin)
+        tx.vin.append(CTxIn(COutPoint(hash=0, n=0xffffffff)))
+        tx.vout.append(CTxOut(1, basic_p2sh))
+        tx.calc_sha256()
+        return tx
+
+
 class NonexistentInput(BadTxTemplate):
     reject_reason = None  # Added as an orphan tx.
     expect_disconnect = False
@@ -166,12 +191,31 @@ class SpendTooMuch(BadTxTemplate):
             self.spend_tx, 0, script_pub_key=basic_p2sh, amount=(self.spend_avail + 1))
 
 
-class SpendNegative(BadTxTemplate):
+class CreateNegative(BadTxTemplate):
     reject_reason = 'bad-txns-vout-negative'
     expect_disconnect = True
 
     def get_tx(self):
         return create_tx_with_script(self.spend_tx, 0, amount=-1)
+
+
+class CreateTooLarge(BadTxTemplate):
+    reject_reason = 'bad-txns-vout-toolarge'
+    expect_disconnect = True
+
+    def get_tx(self):
+        return create_tx_with_script(self.spend_tx, 0, amount=MAX_MONEY + 1)
+
+
+class CreateSumTooLarge(BadTxTemplate):
+    reject_reason = 'bad-txns-txouttotal-toolarge'
+    expect_disconnect = True
+
+    def get_tx(self):
+        tx = create_tx_with_script(self.spend_tx, 0, amount=MAX_MONEY)
+        tx.vout = [tx.vout[0]] * 2
+        tx.calc_sha256()
+        return tx
 
 
 class InvalidOPIFConstruction(BadTxTemplate):
@@ -191,7 +235,7 @@ class TooManySigops(BadTxTemplate):
     expect_disconnect = False
 
     def get_tx(self):
-        lotsa_checksigs = sc.CScript([sc.OP_CHECKSIG] * (MAX_BLOCK_SIGOPS))
+        lotsa_checksigs = CScript([OP_CHECKSIG] * (MAX_BLOCK_SIGOPS))
         return create_tx_with_script(
             self.spend_tx, 0,
             script_pub_key=lotsa_checksigs,
@@ -237,4 +281,3 @@ DisabledOpcodeTemplates = [getDisabledOpcodeTemplate(opcode) for opcode in [
 def iter_all_templates():
     """Iterate through all bad transaction template types."""
     return BadTxTemplate.__subclasses__()
-

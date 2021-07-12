@@ -31,7 +31,7 @@ MessageVerificationResult MessageVerify(
         return MessageVerificationResult::ERR_INVALID_ADDRESS;
     }
 
-    if (boost::get<PKHash>(&destination) == nullptr) {
+    if (std::get_if<PKHash>(&destination) == nullptr) {
         return MessageVerificationResult::ERR_ADDRESS_NO_KEY;
     }
 
@@ -64,7 +64,7 @@ bool MessageSign(
         return false;
     }
 
-    signature = EncodeBase64(signature_bytes.data(), signature_bytes.size());
+    signature = EncodeBase64(signature_bytes);
 
     return true;
 }
@@ -75,4 +75,18 @@ uint256 MessageHash(const std::string& message)
     hasher << MESSAGE_MAGIC << message;
 
     return hasher.GetHash();
+}
+
+std::string SigningResultString(const SigningResult res)
+{
+    switch (res) {
+        case SigningResult::OK:
+            return "No error";
+        case SigningResult::PRIVATE_KEY_NOT_AVAILABLE:
+            return "Private key not available";
+        case SigningResult::SIGNING_FAILED:
+            return "Sign failed";
+        // no default case, so the compiler can warn about missing cases
+    }
+    assert(false);
 }
